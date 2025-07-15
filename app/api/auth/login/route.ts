@@ -42,10 +42,13 @@ export async function POST(request: NextRequest) {
     console.log('Password verified successfully')
 
     // Generate JWT token
+    const subscriptionTier = user.metadata.subscription_tier
+    const tierValue = typeof subscriptionTier === 'string' ? subscriptionTier : subscriptionTier?.value || 'Free'
+    
     const token = generateToken({
       userId: user.id,
       email: user.metadata.email,
-      subscriptionTier: user.metadata.subscription_tier.value
+      subscriptionTier: tierValue
     })
 
     console.log('JWT token generated')

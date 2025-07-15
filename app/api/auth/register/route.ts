@@ -102,11 +102,14 @@ export async function POST(request: NextRequest) {
     // Generate JWT token
     let token: string
     try {
+      const subscriptionTier = user.metadata.subscription_tier
+      const tierValue = typeof subscriptionTier === 'string' ? subscriptionTier : subscriptionTier?.value || 'Free'
+      
       token = jwt.sign(
         { 
           userId: user.id, 
           email: user.metadata.email,
-          subscriptionTier: user.metadata.subscription_tier?.value || 'Free'
+          subscriptionTier: tierValue
         },
         process.env.JWT_SECRET!,
         { expiresIn: '7d' }
@@ -138,11 +141,12 @@ export async function POST(request: NextRequest) {
 
     console.log('Registration completed successfully')
     return response
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Registration error:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json({ 
       error: 'Internal server error',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
     }, { status: 500 })
   }
 }

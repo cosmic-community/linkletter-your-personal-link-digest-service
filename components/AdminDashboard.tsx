@@ -113,49 +113,54 @@ export function AdminDashboard({ analytics }: AdminDashboardProps) {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {users.map(user => (
-                  <tr key={user.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-medium">
-                          {user.metadata.first_name?.[0] || user.metadata.email?.[0]?.toUpperCase() || 'U'}
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
-                            {user.metadata.first_name || ''} {user.metadata.last_name || ''}
+                {users.map(user => {
+                  const subscriptionTier = user.metadata.subscription_tier
+                  const tierValue = typeof subscriptionTier === 'string' ? subscriptionTier : subscriptionTier?.value || 'Free'
+                  
+                  return (
+                    <tr key={user.id}>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-medium">
+                            {user.metadata.first_name?.[0] || user.metadata.email?.[0]?.toUpperCase() || 'U'}
                           </div>
-                          <div className="text-sm text-gray-500">
-                            Joined {user.metadata.account_created ? new Date(user.metadata.account_created).toLocaleDateString() : 'Unknown'}
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900">
+                              {user.metadata.first_name || ''} {user.metadata.last_name || ''}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              Joined {user.metadata.account_created ? new Date(user.metadata.account_created).toLocaleDateString() : 'Unknown'}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {user.metadata.email}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        user.metadata.subscription_tier?.value === 'Paid' 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {user.metadata.subscription_tier?.value || 'Free'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {user.metadata.weekly_link_count || 0}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        user.metadata.email_verified 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {user.metadata.email_verified ? 'Verified' : 'Pending'}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {user.metadata.email}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          tierValue === 'Paid' 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {tierValue}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {user.metadata.weekly_link_count || 0}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          user.metadata.email_verified 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {user.metadata.email_verified ? 'Verified' : 'Pending'}
+                        </span>
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>

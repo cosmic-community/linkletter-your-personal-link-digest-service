@@ -26,8 +26,8 @@ try {
   throw error
 }
 
-// Export createBucketClient for use in other files
-export { createBucketClient }
+// Export both createBucketClient and cosmic instance
+export { createBucketClient, cosmic }
 
 export async function getLinks(): Promise<CosmicLink[]> {
   try {

@@ -20,8 +20,14 @@ export async function GET(request: NextRequest) {
     const analytics = {
       users: {
         total: users.length,
-        free: users.filter((u: CosmicUser) => u.metadata.subscription_tier.value === 'Free').length,
-        paid: users.filter((u: CosmicUser) => u.metadata.subscription_tier.value === 'Paid').length,
+        free: users.filter((u: CosmicUser) => {
+          const tier = u.metadata.subscription_tier
+          return typeof tier === 'string' ? tier === 'Free' : tier?.value === 'Free'
+        }).length,
+        paid: users.filter((u: CosmicUser) => {
+          const tier = u.metadata.subscription_tier
+          return typeof tier === 'string' ? tier === 'Paid' : tier?.value === 'Paid'
+        }).length,
         verified: users.filter((u: CosmicUser) => u.metadata.email_verified).length,
       },
       links: {
