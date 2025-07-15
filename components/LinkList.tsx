@@ -124,8 +124,6 @@ export function LinkList({ links, onDelete, onEdit }: LinkListProps) {
           <LinkCard
             key={link.id}
             link={link}
-            onDelete={onDelete}
-            onEdit={onEdit}
           />
         ))}
       </div>

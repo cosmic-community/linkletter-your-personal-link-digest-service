@@ -55,7 +55,7 @@ export function AdminDashboard({ analytics }: AdminDashboardProps) {
       })
       if (response.ok) {
         const result = await response.json()
-        alert(`Sent ${result.digests.length} digests successfully!`)
+        alert(`Sent ${result.digests?.length || 0} digests successfully!`)
       }
     } catch (error) {
       console.error('Error sending digests:', error)

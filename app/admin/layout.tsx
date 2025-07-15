@@ -23,7 +23,13 @@ export default function AdminLayout({
         }
 
         // Decode token to check if user is admin
-        const payload = JSON.parse(atob(token.split('.')[1]))
+        const tokenParts = token.split('.')
+        if (tokenParts.length !== 3) {
+          router.push('/login')
+          return
+        }
+
+        const payload = JSON.parse(atob(tokenParts[1]))
         if (payload.subscriptionTier !== 'Admin') {
           router.push('/dashboard')
           return

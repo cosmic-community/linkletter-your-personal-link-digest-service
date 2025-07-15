@@ -24,19 +24,22 @@ export function Navigation() {
     const token = localStorage.getItem('auth-token')
     if (token) {
       try {
-        const payload = JSON.parse(atob(token.split('.')[1]))
-        // This is a simplified user object from token
-        // In production, you'd want to fetch full user data
-        setUser({
-          id: payload.userId,
-          title: payload.email,
-          metadata: {
-            email: payload.email,
-            subscription_tier: {
-              value: payload.subscriptionTier
+        const tokenParts = token.split('.')
+        if (tokenParts.length === 3) {
+          const payload = JSON.parse(atob(tokenParts[1]))
+          // This is a simplified user object from token
+          // In production, you'd want to fetch full user data
+          setUser({
+            id: payload.userId,
+            title: payload.email,
+            metadata: {
+              email: payload.email,
+              subscription_tier: {
+                value: payload.subscriptionTier
+              }
             }
-          }
-        })
+          })
+        }
       } catch (error) {
         console.error('Error parsing token:', error)
         localStorage.removeItem('auth-token')

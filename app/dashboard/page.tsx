@@ -21,7 +21,13 @@ export default function DashboardPage() {
     }
 
     try {
-      const payload = JSON.parse(atob(token.split('.')[1]))
+      const tokenParts = token.split('.')
+      if (tokenParts.length !== 3) {
+        router.push('/login')
+        return
+      }
+
+      const payload = JSON.parse(atob(tokenParts[1]))
       setUser(payload)
     } catch (error) {
       console.error('Error parsing token:', error)

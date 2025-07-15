@@ -8,6 +8,9 @@ export const cosmic = createBucketClient({
   writeKey: process.env.COSMIC_WRITE_KEY || '',
 })
 
+// Export createBucketClient for use in other files
+export { createBucketClient }
+
 export async function getLinks(): Promise<CosmicLink[]> {
   try {
     const response = await cosmic.objects
