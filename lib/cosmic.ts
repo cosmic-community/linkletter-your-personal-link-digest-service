@@ -2,11 +2,10 @@ import { createBucketClient } from '@cosmicjs/sdk'
 import { CosmicLink, CosmicUser, CosmicWeeklyDigest, CosmicAppSettings } from './types'
 
 // Initialize Cosmic client
-const cosmic = createBucketClient({
+export const cosmic = createBucketClient({
   bucketSlug: process.env.COSMIC_BUCKET_SLUG || '',
   readKey: process.env.COSMIC_READ_KEY || '',
   writeKey: process.env.COSMIC_WRITE_KEY || '',
-  apiEnvironment: 'staging'
 })
 
 export async function getLinks(): Promise<CosmicLink[]> {
@@ -54,6 +53,16 @@ export async function getUserById(id: string): Promise<CosmicUser | null> {
       return null
     }
     throw error
+  }
+}
+
+export async function getUserByEmail(email: string): Promise<CosmicUser | null> {
+  try {
+    const users = await getUsers()
+    return users.find(user => user.metadata.email === email) || null
+  } catch (error) {
+    console.error('Error fetching user by email:', error)
+    return null
   }
 }
 
@@ -119,6 +128,18 @@ export async function createLink(linkData: {
   return response.object as CosmicLink
 }
 
+export async function updateLink(linkId: string, linkData: Partial<CosmicLink>): Promise<CosmicLink> {
+  const response = await cosmic.objects.updateOne(linkId, {
+    metadata: linkData.metadata,
+  })
+  
+  return response.object as CosmicLink
+}
+
+export async function deleteLink(linkId: string): Promise<void> {
+  await cosmic.objects.deleteOne(linkId)
+}
+
 export async function createUser(userData: {
   title: string
   email: string
@@ -146,6 +167,14 @@ export async function createUser(userData: {
         pocket_integration: false,
       },
     },
+  })
+  
+  return response.object as CosmicUser
+}
+
+export async function updateUser(userId: string, userData: Partial<CosmicUser>): Promise<CosmicUser> {
+  const response = await cosmic.objects.updateOne(userId, {
+    metadata: userData.metadata,
   })
   
   return response.object as CosmicUser
