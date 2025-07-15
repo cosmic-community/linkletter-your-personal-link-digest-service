@@ -23,10 +23,10 @@ export function middleware(request: NextRequest) {
     }
 
     try {
-      const payload = jwt.verify(token, process.env.NEXTAUTH_SECRET!) as any
+      const payload = jwt.verify(token, process.env.JWT_SECRET!) as any
       
       // Check admin access
-      if (isAdminRoute && payload.subscriptionTier !== 'Admin') {
+      if (isAdminRoute && payload.subscriptionTier !== 'Paid') {
         return NextResponse.redirect(new URL('/dashboard', request.url))
       }
       

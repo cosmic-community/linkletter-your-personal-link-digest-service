@@ -1,3 +1,5 @@
+import { ValidationResult } from './types'
+
 export function validateUrl(url: string): boolean {
   try {
     new URL(url)
@@ -12,10 +14,7 @@ export function validateEmail(email: string): boolean {
   return emailRegex.test(email)
 }
 
-export function validatePassword(password: string): {
-  isValid: boolean
-  errors: string[]
-} {
+export function validatePassword(password: string): ValidationResult {
   const errors: string[] = []
   
   if (password.length < 8) {
@@ -45,10 +44,7 @@ export function validateRegistrationData(data: {
   password: string
   firstName?: string
   lastName?: string
-}): {
-  isValid: boolean
-  errors: string[]
-} {
+}): ValidationResult {
   const errors: string[] = []
   
   if (!data.email) {
@@ -64,6 +60,68 @@ export function validateRegistrationData(data: {
     if (!passwordValidation.isValid) {
       errors.push(...passwordValidation.errors)
     }
+  }
+  
+  return {
+    isValid: errors.length === 0,
+    errors
+  }
+}
+
+export function validateLinkData(data: {
+  url: string
+  title: string
+  notes?: string
+  tags?: string
+}): ValidationResult {
+  const errors: string[] = []
+  
+  if (!data.url) {
+    errors.push('URL is required')
+  } else if (!validateUrl(data.url)) {
+    errors.push('Invalid URL format')
+  }
+  
+  if (!data.title) {
+    errors.push('Title is required')
+  } else if (data.title.length > 200) {
+    errors.push('Title must be less than 200 characters')
+  }
+  
+  if (data.notes && data.notes.length > 1000) {
+    errors.push('Notes must be less than 1000 characters')
+  }
+  
+  if (data.tags && data.tags.length > 200) {
+    errors.push('Tags must be less than 200 characters')
+  }
+  
+  return {
+    isValid: errors.length === 0,
+    errors
+  }
+}
+
+export function sanitizeInput(input: string): string {
+  return input.trim().replace(/[<>]/g, '')
+}
+
+export function validateTagString(tags: string): ValidationResult {
+  const errors: string[] = []
+  
+  if (tags.length > 200) {
+    errors.push('Tags must be less than 200 characters')
+  }
+  
+  const tagArray = tags.split(',').map(tag => tag.trim())
+  
+  if (tagArray.length > 10) {
+    errors.push('Maximum 10 tags allowed')
+  }
+  
+  const invalidTags = tagArray.filter(tag => tag.length > 30)
+  if (invalidTags.length > 0) {
+    errors.push('Each tag must be less than 30 characters')
   }
   
   return {

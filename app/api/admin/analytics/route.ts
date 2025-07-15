@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUsers, getLinks, getWeeklyDigests } from '@/lib/cosmic'
 import { verifyToken } from '@/lib/auth'
-import { CosmicUser, CosmicLink } from '@/lib/types'
+import { AnalyticsData } from '@/lib/types'
 
 export async function GET(request: NextRequest) {
   try {
+    // Verify authentication and admin access
     const user = await verifyToken(request)
-    
-    if (!user || user.subscriptionTier !== 'Admin') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+    if (!user || user.subscriptionTier !== 'Paid') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const [users, links, digests] = await Promise.all([
@@ -17,34 +17,51 @@ export async function GET(request: NextRequest) {
       getWeeklyDigests()
     ])
 
-    const analytics = {
+    // Calculate analytics
+    const now = new Date()
+    const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay())
+    
+    const freeUsers = users.filter(user => {
+      const tier = user.metadata.subscription_tier
+      const tierValue = typeof tier === 'string' ? tier : tier?.value || 'Free'
+      return tierValue === 'Free'
+    })
+
+    const paidUsers = users.filter(user => {
+      const tier = user.metadata.subscription_tier
+      const tierValue = typeof tier === 'string' ? tier : tier?.value || 'Free'
+      return tierValue === 'Paid'
+    })
+
+    const verifiedUsers = users.filter(user => user.metadata.email_verified)
+
+    const linksThisWeek = links.filter(link => {
+      const linkDate = new Date(link.metadata.date_saved)
+      return linkDate >= weekStart
+    })
+
+    const sentDigests = digests.filter(digest => digest.metadata.email_sent)
+    const openedDigests = digests.filter(digest => digest.metadata.email_opened)
+
+    const totalClicks = links.reduce((sum, link) => sum + (link.metadata.click_count || 0), 0)
+
+    const analytics: AnalyticsData = {
       users: {
         total: users.length,
-        free: users.filter((u: CosmicUser) => {
-          const tier = u.metadata.subscription_tier
-          return typeof tier === 'string' ? tier === 'Free' : tier?.value === 'Free'
-        }).length,
-        paid: users.filter((u: CosmicUser) => {
-          const tier = u.metadata.subscription_tier
-          return typeof tier === 'string' ? tier === 'Paid' : tier?.value === 'Paid'
-        }).length,
-        verified: users.filter((u: CosmicUser) => u.metadata.email_verified).length,
+        free: freeUsers.length,
+        paid: paidUsers.length,
+        verified: verifiedUsers.length
       },
       links: {
         total: links.length,
-        thisWeek: links.filter((l: CosmicLink) => {
-          const linkDate = new Date(l.metadata.date_saved)
-          const weekAgo = new Date()
-          weekAgo.setDate(weekAgo.getDate() - 7)
-          return linkDate > weekAgo
-        }).length,
-        totalClicks: links.reduce((sum: number, l: CosmicLink) => sum + (l.metadata.click_count || 0), 0),
+        thisWeek: linksThisWeek.length,
+        totalClicks
       },
       digests: {
         total: digests.length,
-        sent: digests.filter(d => d.metadata.email_sent).length,
-        opened: digests.filter(d => d.metadata.email_opened).length,
-      },
+        sent: sentDigests.length,
+        opened: openedDigests.length
+      }
     }
 
     return NextResponse.json(analytics)

@@ -1,7 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { validateUrl } from '@/lib/validations'
+import { TagAutocomplete } from './TagAutocomplete'
+import { LoadingSpinner } from './LoadingSpinner'
+import { MetadataFetchResult } from '@/lib/types'
 
 interface BookmarkFormProps {
   onSubmit: (data: {
@@ -21,6 +24,36 @@ export function BookmarkForm({ onSubmit, loading = false }: BookmarkFormProps) {
     tags: ''
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [fetchingMetadata, setFetchingMetadata] = useState(false)
+  const [metadataFetched, setMetadataFetched] = useState(false)
+
+  // Auto-fetch metadata when URL changes
+  useEffect(() => {
+    const fetchMetadata = async () => {
+      if (formData.url && validateUrl(formData.url) && !metadataFetched) {
+        setFetchingMetadata(true)
+        try {
+          const response = await fetch(`/api/metadata?url=${encodeURIComponent(formData.url)}`)
+          if (response.ok) {
+            const metadata: MetadataFetchResult = await response.json()
+            setFormData(prev => ({
+              ...prev,
+              title: prev.title || metadata.title,
+              notes: prev.notes || metadata.description
+            }))
+            setMetadataFetched(true)
+          }
+        } catch (error) {
+          console.error('Error fetching metadata:', error)
+        } finally {
+          setFetchingMetadata(false)
+        }
+      }
+    }
+
+    const timeoutId = setTimeout(fetchMetadata, 500)
+    return () => clearTimeout(timeoutId)
+  }, [formData.url, metadataFetched])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -50,6 +83,7 @@ export function BookmarkForm({ onSubmit, loading = false }: BookmarkFormProps) {
           notes: '',
           tags: ''
         })
+        setMetadataFetched(false)
       } catch (error) {
         console.error('Error submitting bookmark:', error)
       }
@@ -70,6 +104,18 @@ export function BookmarkForm({ onSubmit, loading = false }: BookmarkFormProps) {
         [name]: ''
       }))
     }
+
+    // Reset metadata fetched when URL changes
+    if (name === 'url') {
+      setMetadataFetched(false)
+    }
+  }
+
+  const handleTagsChange = (tags: string) => {
+    setFormData(prev => ({
+      ...prev,
+      tags
+    }))
   }
 
   return (
@@ -81,17 +127,25 @@ export function BookmarkForm({ onSubmit, loading = false }: BookmarkFormProps) {
           <label htmlFor="url" className="block text-sm font-medium text-gray-700 mb-1">
             URL *
           </label>
-          <input
-            type="url"
-            id="url"
-            name="url"
-            value={formData.url}
-            onChange={handleChange}
-            placeholder="https://example.com"
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              errors.url ? 'border-red-500' : 'border-gray-300'
-            }`}
-          />
+          <div className="relative">
+            <input
+              type="url"
+              id="url"
+              name="url"
+              value={formData.url}
+              onChange={handleChange}
+              placeholder="https://example.com"
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                errors.url ? 'border-red-500' : 'border-gray-300'
+              }`}
+              disabled={loading}
+            />
+            {fetchingMetadata && (
+              <div className="absolute right-3 top-2.5">
+                <LoadingSpinner size="sm" />
+              </div>
+            )}
+          </div>
           {errors.url && <p className="text-red-500 text-sm mt-1">{errors.url}</p>}
         </div>
 
@@ -109,6 +163,7 @@ export function BookmarkForm({ onSubmit, loading = false }: BookmarkFormProps) {
             className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
               errors.title ? 'border-red-500' : 'border-gray-300'
             }`}
+            disabled={loading}
           />
           {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title}</p>}
         </div>
@@ -125,6 +180,7 @@ export function BookmarkForm({ onSubmit, loading = false }: BookmarkFormProps) {
             placeholder="Add any notes about this link..."
             rows={3}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            disabled={loading}
           />
         </div>
 
@@ -132,21 +188,17 @@ export function BookmarkForm({ onSubmit, loading = false }: BookmarkFormProps) {
           <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-1">
             Tags (Optional)
           </label>
-          <input
-            type="text"
-            id="tags"
-            name="tags"
+          <TagAutocomplete
             value={formData.tags}
-            onChange={handleChange}
-            placeholder="web development, react, tutorial"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            onChange={handleTagsChange}
+            placeholder="Add tags separated by commas"
+            disabled={loading}
           />
-          <p className="text-sm text-gray-500 mt-1">Separate tags with commas</p>
         </div>
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || fetchingMetadata}
           className="w-full btn btn-primary disabled:opacity-50"
         >
           {loading ? 'Adding...' : 'Add Bookmark'}
