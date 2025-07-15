@@ -12,12 +12,15 @@
   },
   "dependencies": {
     "@cosmicjs/sdk": "^1.5.5",
+    "@stripe/stripe-js": "^2.4.0",
     "@types/node": "^20.0.0",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
     "autoprefixer": "^10.4.14",
     "bcryptjs": "^2.4.3",
+    "clsx": "^2.0.0",
     "jsonwebtoken": "^9.0.2",
+    "mailgun-js": "^0.22.0",
     "next": "^14.0.0",
     "postcss": "^8.4.24",
     "react": "^18.0.0",
@@ -29,6 +32,7 @@
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.5",
+    "@types/mailgun-js": "^0.22.18",
     "eslint": "^8.0.0",
     "eslint-config-next": "^14.0.0"
   }
