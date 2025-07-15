@@ -4,14 +4,22 @@ import { sendDigestEmail } from '@/lib/email'
 import { getWeekNumber } from '@/lib/utils'
 import { CosmicUser, CosmicLink } from '@/lib/types'
 
-const cosmic = createBucketClient({
-  bucketSlug: process.env.COSMIC_BUCKET_SLUG || '',
-  readKey: process.env.COSMIC_READ_KEY || '',
-  writeKey: process.env.COSMIC_WRITE_KEY || '',
-})
-
 export async function POST(request: NextRequest) {
   try {
+    // Check if required environment variables are available
+    if (!process.env.MAILGUN_API_KEY || !process.env.MAILGUN_DOMAIN) {
+      return NextResponse.json(
+        { error: 'Email service not configured. Missing MAILGUN_API_KEY or MAILGUN_DOMAIN.' },
+        { status: 500 }
+      )
+    }
+
+    const cosmic = createBucketClient({
+      bucketSlug: process.env.COSMIC_BUCKET_SLUG || '',
+      readKey: process.env.COSMIC_READ_KEY || '',
+      writeKey: process.env.COSMIC_WRITE_KEY || '',
+    })
+
     const users = await getUsers()
     const links = await getLinks()
     

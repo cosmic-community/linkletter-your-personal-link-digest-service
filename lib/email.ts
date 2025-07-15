@@ -1,10 +1,30 @@
 import mailgun from 'mailgun-js'
 import { CosmicUser, CosmicLink } from './types'
 
-const mg = mailgun({
-  apiKey: process.env.MAILGUN_API_KEY!,
-  domain: process.env.MAILGUN_DOMAIN!
-})
+// Lazy initialization of Mailgun client
+let mgClient: mailgun.Mailgun | null = null
+
+function getMailgunClient(): mailgun.Mailgun {
+  if (!mgClient) {
+    const apiKey = process.env.MAILGUN_API_KEY
+    const domain = process.env.MAILGUN_DOMAIN
+    
+    if (!apiKey) {
+      throw new Error('MAILGUN_API_KEY environment variable is required')
+    }
+    
+    if (!domain) {
+      throw new Error('MAILGUN_DOMAIN environment variable is required')
+    }
+    
+    mgClient = mailgun({
+      apiKey,
+      domain
+    })
+  }
+  
+  return mgClient
+}
 
 export async function sendDigestEmail(
   user: CosmicUser,
@@ -12,6 +32,7 @@ export async function sendDigestEmail(
   weekNumber: number,
   year: number
 ): Promise<void> {
+  const mg = getMailgunClient()
   const emailHtml = generateDigestEmailHTML(user, links, weekNumber, year)
   
   const data = {
