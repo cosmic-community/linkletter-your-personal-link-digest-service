@@ -12,8 +12,11 @@
   },
   "dependencies": {
     "@cosmicjs/sdk": "^1.5.5",
+    "@stripe/stripe-js": "^2.4.0",
     "bcryptjs": "^2.4.3",
+    "clsx": "^2.0.0",
     "jsonwebtoken": "^9.0.2",
+    "mailgun-js": "^0.22.0",
     "next": "15.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -22,6 +25,7 @@
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.5",
+    "@types/mailgun-js": "^0.22.18",
     "@types/node": "^20.10.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",

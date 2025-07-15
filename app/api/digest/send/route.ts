@@ -64,13 +64,15 @@ export async function POST(request: NextRequest) {
       try {
         await sendDigestEmail(user, userLinks, currentWeek, currentYear)
         
-        // Update digest as sent
-        await cosmic.objects.updateOne(digest.object.id, {
-          metadata: {
-            ...digest.object.metadata,
-            email_sent: true,
-          }
-        })
+        // Update digest as sent - fix: access digest.object.id safely
+        if (digest.object && digest.object.id) {
+          await cosmic.objects.updateOne(digest.object.id, {
+            metadata: {
+              ...digest.object.metadata,
+              email_sent: true,
+            }
+          })
+        }
         
         digestsSent.push({
           user: user.metadata.email,

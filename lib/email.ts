@@ -43,7 +43,7 @@ export async function sendDigestEmail(
   }
 
   return new Promise((resolve, reject) => {
-    mg.messages().send(data, (error, body) => {
+    mg.messages().send(data, (error: any, body: any) => {
       if (error) {
         reject(error)
       } else {

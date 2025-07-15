@@ -34,7 +34,7 @@ export interface CosmicLink {
     title: string
     notes: string
     tags: string
-    user: string
+    user: string | CosmicUser
     date_saved: string
     week_number: number
     year: number
