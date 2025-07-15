@@ -7,12 +7,25 @@ interface UseLinkOptions {
   page?: number
   limit?: number
   search?: string
-  tag?: string
+  tags?: string[]
   sortBy?: string
   archived?: boolean
 }
 
-export function useLinks(options: UseLinkOptions = {}) {
+interface UseLinksReturn {
+  links: CosmicLink[]
+  loading: boolean
+  error: string | null
+  pagination: PaginationData | null
+  refetch: () => void
+  addLink: (linkData: { url: string; title: string; notes: string; tags: string }) => Promise<{ success: boolean; link?: CosmicLink; error?: string }>
+  updateLink: (linkId: string, updates: Partial<CosmicLink>) => Promise<{ success: boolean; link?: CosmicLink; error?: string }>
+  deleteLink: (linkId: string) => Promise<{ success: boolean; error?: string }>
+  bulkDeleteLinks: (linkIds: string[]) => Promise<{ success: boolean; error?: string }>
+  bulkArchiveLinks: (linkIds: string[]) => Promise<{ success: boolean; error?: string }>
+}
+
+export function useLinks(options: UseLinkOptions = {}): UseLinksReturn {
   const [links, setLinks] = useState<CosmicLink[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -28,7 +41,9 @@ export function useLinks(options: UseLinkOptions = {}) {
       if (options.page) searchParams.set('page', options.page.toString())
       if (options.limit) searchParams.set('limit', options.limit.toString())
       if (options.search) searchParams.set('search', options.search)
-      if (options.tag) searchParams.set('tag', options.tag)
+      if (options.tags && options.tags.length > 0) {
+        searchParams.set('tags', options.tags.join(','))
+      }
       if (options.sortBy) searchParams.set('sortBy', options.sortBy)
       if (options.archived !== undefined) searchParams.set('archived', options.archived.toString())
 
@@ -54,7 +69,7 @@ export function useLinks(options: UseLinkOptions = {}) {
     options.page,
     options.limit,
     options.search,
-    options.tag,
+    options.tags,
     options.sortBy,
     options.archived
   ])
@@ -134,6 +149,54 @@ export function useLinks(options: UseLinkOptions = {}) {
     }
   }
 
+  const bulkDeleteLinks = async (linkIds: string[]) => {
+    try {
+      const response = await fetch('/api/links/bulk', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ linkIds }),
+      })
+
+      if (response.ok) {
+        setLinks(prev => prev.filter(link => !linkIds.includes(link.id)))
+        return { success: true }
+      } else {
+        const error = await response.json()
+        return { success: false, error: error.error }
+      }
+    } catch (error) {
+      return { success: false, error: 'Network error' }
+    }
+  }
+
+  const bulkArchiveLinks = async (linkIds: string[]) => {
+    try {
+      const response = await fetch('/api/links/bulk', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ linkIds, updates: { archived: true } }),
+      })
+
+      if (response.ok) {
+        setLinks(prev => prev.map(link => 
+          linkIds.includes(link.id) 
+            ? { ...link, metadata: { ...link.metadata, archived: true } }
+            : link
+        ))
+        return { success: true }
+      } else {
+        const error = await response.json()
+        return { success: false, error: error.error }
+      }
+    } catch (error) {
+      return { success: false, error: 'Network error' }
+    }
+  }
+
   return {
     links,
     loading,
@@ -142,6 +205,8 @@ export function useLinks(options: UseLinkOptions = {}) {
     refetch,
     addLink,
     updateLink,
-    deleteLink
+    deleteLink,
+    bulkDeleteLinks,
+    bulkArchiveLinks
   }
 }

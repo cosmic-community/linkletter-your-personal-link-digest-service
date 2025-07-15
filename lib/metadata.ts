@@ -16,6 +16,15 @@ interface MetadataOptions {
   tags?: string[]
 }
 
+export interface MetadataFetchResult {
+  title: string
+  description: string
+  image?: string
+  url: string
+  favicon?: string
+  siteName?: string
+}
+
 export function generateMetadata(options: MetadataOptions = {}): Metadata {
   const {
     title = 'LinkLetter - Your Personal Link Digest Service',
@@ -79,23 +88,23 @@ export function generateMetadata(options: MetadataOptions = {}): Metadata {
 
   // Add article-specific metadata if provided
   if (publishedTime && metadata.openGraph) {
-    metadata.openGraph.publishedTime = publishedTime
+    (metadata.openGraph as any).publishedTime = publishedTime
   }
   
   if (modifiedTime && metadata.openGraph) {
-    metadata.openGraph.modifiedTime = modifiedTime
+    (metadata.openGraph as any).modifiedTime = modifiedTime
   }
   
   if (authors && metadata.openGraph) {
-    metadata.openGraph.authors = authors
+    (metadata.openGraph as any).authors = authors
   }
   
   if (section && metadata.openGraph) {
-    metadata.openGraph.section = section
+    (metadata.openGraph as any).section = section
   }
   
   if (tags && metadata.openGraph) {
-    metadata.openGraph.tags = tags
+    (metadata.openGraph as any).tags = tags
   }
 
   return metadata
@@ -133,4 +142,49 @@ export function generateArticleMetadata(
     type: 'article',
     ...options
   })
+}
+
+export async function fetchMetadata(url: string): Promise<MetadataFetchResult> {
+  try {
+    const response = await fetch(url)
+    const html = await response.text()
+    
+    // Extract title
+    const titleMatch = html.match(/<title[^>]*>([^<]*)<\/title>/i)
+    const title = titleMatch ? titleMatch[1].trim() : url
+
+    // Extract description
+    const descriptionMatch = html.match(/<meta[^>]*name="description"[^>]*content="([^"]*)"[^>]*>/i) ||
+                            html.match(/<meta[^>]*property="og:description"[^>]*content="([^"]*)"[^>]*>/i)
+    const description = descriptionMatch ? descriptionMatch[1].trim() : ''
+
+    // Extract image
+    const imageMatch = html.match(/<meta[^>]*property="og:image"[^>]*content="([^"]*)"[^>]*>/i)
+    const image = imageMatch ? imageMatch[1].trim() : undefined
+
+    // Extract site name
+    const siteNameMatch = html.match(/<meta[^>]*property="og:site_name"[^>]*content="([^"]*)"[^>]*>/i)
+    const siteName = siteNameMatch ? siteNameMatch[1].trim() : undefined
+
+    // Extract favicon
+    const faviconMatch = html.match(/<link[^>]*rel="icon"[^>]*href="([^"]*)"[^>]*>/i) ||
+                        html.match(/<link[^>]*rel="shortcut icon"[^>]*href="([^"]*)"[^>]*>/i)
+    const favicon = faviconMatch ? faviconMatch[1].trim() : undefined
+
+    return {
+      title,
+      description,
+      image,
+      url,
+      favicon,
+      siteName
+    }
+  } catch (error) {
+    console.error('Error fetching metadata:', error)
+    return {
+      title: url,
+      description: '',
+      url
+    }
+  }
 }

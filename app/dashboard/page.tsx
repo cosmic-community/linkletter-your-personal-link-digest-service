@@ -5,15 +5,15 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useLinks } from '@/hooks/useLinks'
 import { useDebounce } from '@/hooks/useDebounce'
-import LinkList from '@/components/LinkList'
-import SearchBar from '@/components/SearchBar'
-import FilterDropdown from '@/components/FilterDropdown'
-import BulkActions from '@/components/BulkActions'
-import Pagination from '@/components/Pagination'
-import BookmarkForm from '@/components/BookmarkForm'
-import UserStats from '@/components/UserStats'
-import LoadingSpinner from '@/components/LoadingSpinner'
-import Navigation from '@/components/Navigation'
+import { LinkList } from '@/components/LinkList'
+import { SearchBar } from '@/components/SearchBar'
+import { FilterDropdown } from '@/components/FilterDropdown'
+import { BulkActions } from '@/components/BulkActions'
+import { Pagination } from '@/components/Pagination'
+import { BookmarkForm } from '@/components/BookmarkForm'
+import { UserStats } from '@/components/UserStats'
+import { LoadingSpinner } from '@/components/LoadingSpinner'
+import { Navigation } from '@/components/Navigation'
 
 export interface PaginationData {
   currentPage: number
@@ -39,13 +39,14 @@ export default function Dashboard() {
     links, 
     loading, 
     error, 
-    totalItems,
-    refreshLinks,
-    deleteLink,
+    pagination,
+    refetch,
+    addLink,
     updateLink,
+    deleteLink,
     bulkDeleteLinks,
     bulkArchiveLinks
-  } = useLinks(user?.id, {
+  } = useLinks({
     search: debouncedSearchTerm,
     tags: selectedTags,
     sortBy,
@@ -96,7 +97,7 @@ export default function Dashboard() {
     try {
       await bulkDeleteLinks(selectedLinks)
       setSelectedLinks([])
-      await refreshLinks()
+      await refetch()
     } catch (error) {
       console.error('Error deleting links:', error)
     }
@@ -108,7 +109,7 @@ export default function Dashboard() {
     try {
       await bulkArchiveLinks(selectedLinks)
       setSelectedLinks([])
-      await refreshLinks()
+      await refetch()
     } catch (error) {
       console.error('Error archiving links:', error)
     }
@@ -117,7 +118,7 @@ export default function Dashboard() {
   const handleDeleteLink = async (linkId: string) => {
     try {
       await deleteLink(linkId)
-      await refreshLinks()
+      await refetch()
     } catch (error) {
       console.error('Error deleting link:', error)
     }
@@ -126,15 +127,25 @@ export default function Dashboard() {
   const handleUpdateLink = async (linkId: string, updates: any) => {
     try {
       await updateLink(linkId, updates)
-      await refreshLinks()
+      await refetch()
     } catch (error) {
       console.error('Error updating link:', error)
     }
   }
 
-  const handleBookmarkSubmit = async () => {
-    setShowBookmarkForm(false)
-    await refreshLinks()
+  const handleBookmarkSubmit = async (linkData: {
+    url: string
+    title: string
+    notes: string
+    tags: string
+  }) => {
+    try {
+      await addLink(linkData)
+      setShowBookmarkForm(false)
+      await refetch()
+    } catch (error) {
+      console.error('Error adding bookmark:', error)
+    }
   }
 
   const handlePageChange = (page: number) => {
@@ -155,15 +166,6 @@ export default function Dashboard() {
     return null
   }
 
-  // Calculate pagination data
-  const totalPages = Math.ceil(totalItems / itemsPerPage)
-  const paginationData: PaginationData = {
-    currentPage,
-    totalPages,
-    totalItems,
-    itemsPerPage
-  }
-
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
@@ -172,13 +174,17 @@ export default function Dashboard() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
           <p className="mt-2 text-gray-600">
-            Welcome back, {user.metadata.first_name || user.title}!
+            Welcome back, {user.firstName || user.email}!
           </p>
         </div>
 
         {/* User Stats */}
         <div className="mb-8">
-          <UserStats userId={user.id} />
+          <UserStats analytics={{
+            users: { total: 0, free: 0, paid: 0, verified: 0 },
+            links: { total: links.length, thisWeek: 0, totalClicks: 0 },
+            digests: { total: 0, sent: 0, opened: 0 }
+          }} />
         </div>
 
         {/* Add Bookmark Button */}
@@ -197,10 +203,18 @@ export default function Dashboard() {
         {/* Search and Filter Controls */}
         <div className="mb-6 space-y-4 lg:space-y-0 lg:flex lg:items-center lg:space-x-4">
           <div className="flex-1">
-            <SearchBar onSearch={handleSearch} placeholder="Search your links..." />
+            <SearchBar value={searchTerm} onChange={handleSearch} placeholder="Search your links..." />
           </div>
           <div className="flex space-x-2">
-            <FilterDropdown onFilterChange={handleFilterChange} />
+            <FilterDropdown
+              options={[
+                { value: 'newest', label: 'Newest First' },
+                { value: 'oldest', label: 'Oldest First' },
+                { value: 'clicks', label: 'Most Clicked' }
+              ]}
+              value={sortBy}
+              onChange={(value) => setSortBy(value as 'newest' | 'oldest' | 'clicks')}
+            />
           </div>
         </div>
 
@@ -209,10 +223,14 @@ export default function Dashboard() {
           <div className="mb-6">
             <BulkActions
               selectedCount={selectedLinks.length}
-              onBulkDelete={handleBulkDelete}
-              onBulkArchive={handleBulkArchive}
-              onSelectAll={handleSelectAll}
-              isAllSelected={selectedLinks.length === links.length}
+              onAction={async (action) => {
+                if (action === 'delete') {
+                  await handleBulkDelete()
+                } else if (action === 'archive') {
+                  await handleBulkArchive()
+                }
+              }}
+              onCancel={() => setSelectedLinks([])}
             />
           </div>
         )}
@@ -246,20 +264,23 @@ export default function Dashboard() {
           <>
             <LinkList
               links={links}
-              onSelectLink={handleSelectLink}
-              selectedLinks={selectedLinks}
-              onDeleteLink={handleDeleteLink}
-              onUpdateLink={handleUpdateLink}
+              onSelect={handleSelectLink}
+              selectedIds={selectedLinks}
+              onDelete={handleDeleteLink}
+              onEdit={handleUpdateLink}
+              pagination={pagination}
+              onPageChange={handlePageChange}
             />
 
             {/* Pagination */}
-            {totalPages > 1 && (
+            {pagination && pagination.totalPages > 1 && (
               <div className="mt-8">
                 <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
+                  currentPage={pagination.currentPage}
+                  totalPages={pagination.totalPages}
+                  totalItems={pagination.totalItems}
+                  itemsPerPage={pagination.itemsPerPage}
                   onPageChange={handlePageChange}
-                  paginationData={paginationData}
                 />
               </div>
             )}

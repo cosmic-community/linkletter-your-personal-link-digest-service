@@ -124,6 +124,16 @@ export interface AuthUser {
   subscriptionTier: string
   firstName?: string
   lastName?: string
+  metadata?: {
+    first_name?: string
+    last_name?: string
+    email?: string
+    subscription_tier?: {
+      key: string
+      value: string
+    }
+  }
+  title?: string
 }
 
 export interface LinkFormData {
@@ -196,6 +206,8 @@ export interface MetadataFetchResult {
   description: string
   image?: string
   url: string
+  favicon?: string
+  siteName?: string
 }
 
 export interface CacheEntry<T> {
