@@ -21,9 +21,9 @@ export async function fetchMetadata(url: string): Promise<MetadataFetchResult> {
     const imageMatch = html.match(/<meta[^>]*property="og:image"[^>]*content="([^"]*)"[^>]*>/i)
 
     return {
-      title: titleMatch ? titleMatch[1].trim() : new URL(url).hostname,
-      description: descriptionMatch ? descriptionMatch[1].trim() : '',
-      image: imageMatch ? imageMatch[1].trim() : undefined,
+      title: titleMatch?.[1]?.trim() || new URL(url).hostname,
+      description: descriptionMatch?.[1]?.trim() || '',
+      image: imageMatch?.[1]?.trim() || undefined,
       url
     }
   } catch (error) {

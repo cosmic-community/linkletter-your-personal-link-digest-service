@@ -72,7 +72,10 @@ export function TagAutocomplete({
       setActiveSuggestion(prev => prev > 0 ? prev - 1 : -1)
     } else if (e.key === 'Enter' && activeSuggestion >= 0) {
       e.preventDefault()
-      handleSuggestionClick(suggestions[activeSuggestion])
+      const selectedSuggestion = suggestions[activeSuggestion]
+      if (selectedSuggestion) {
+        handleSuggestionClick(selectedSuggestion)
+      }
     } else if (e.key === 'Escape') {
       setShowSuggestions(false)
     }

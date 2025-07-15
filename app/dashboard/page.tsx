@@ -271,7 +271,7 @@ export default function DashboardPage() {
                 onSelect={handleLinkSelect}
                 onSelectAll={handleSelectAll}
                 selectedIds={selectedLinks}
-                pagination={pagination}
+                pagination={pagination ?? undefined}
                 onPageChange={setCurrentPage}
               />
             </div>
