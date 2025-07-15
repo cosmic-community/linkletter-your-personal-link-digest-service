@@ -159,10 +159,10 @@ export async function createUser(userData: {
       password_hash: userData.passwordHash,
       first_name: userData.firstName || '',
       last_name: userData.lastName || '',
-      subscription_tier: userData.subscriptionTier,
+      subscription_tier: userData.subscriptionTier, // This will be the key ('free' or 'paid')
       weekly_link_count: 0,
       email_verified: false,
-      account_created: new Date().toISOString(),
+      account_created: new Date().toISOString().split('T')[0], // Format as YYYY-MM-DD
       preferences: {
         email_notifications: true,
         digest_time: '09:00',

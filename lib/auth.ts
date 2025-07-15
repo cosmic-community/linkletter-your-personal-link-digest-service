@@ -16,7 +16,7 @@ export async function verifyToken(request: NextRequest): Promise<TokenPayload | 
       return null
     }
 
-    const payload = jwt.verify(token, process.env.NEXTAUTH_SECRET!) as TokenPayload
+    const payload = jwt.verify(token, process.env.JWT_SECRET!) as TokenPayload
     return payload
   } catch (error) {
     console.error('Token verification error:', error)
@@ -25,5 +25,5 @@ export async function verifyToken(request: NextRequest): Promise<TokenPayload | 
 }
 
 export function generateToken(payload: TokenPayload): string {
-  return jwt.sign(payload, process.env.NEXTAUTH_SECRET!, { expiresIn: '7d' })
+  return jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: '7d' })
 }

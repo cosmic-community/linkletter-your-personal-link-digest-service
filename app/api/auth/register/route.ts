@@ -23,14 +23,14 @@ export async function POST(request: NextRequest) {
     // Hash password
     const passwordHash = await bcrypt.hash(password, 12)
 
-    // Create user
+    // Create user with correct subscription tier value
     const user = await createUser({
       title: `${firstName || ''} ${lastName || ''}`.trim() || email,
       email,
       passwordHash,
       firstName,
       lastName,
-      subscriptionTier: 'Free'
+      subscriptionTier: 'free' // Use the key, not the value
     })
 
     // Generate JWT token
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
         email: user.metadata.email,
         subscriptionTier: user.metadata.subscription_tier.value
       },
-      process.env.NEXTAUTH_SECRET!,
+      process.env.JWT_SECRET!,
       { expiresIn: '7d' }
     )
 
