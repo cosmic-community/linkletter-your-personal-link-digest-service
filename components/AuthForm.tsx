@@ -53,7 +53,21 @@ export function AuthForm({ mode }: AuthFormProps) {
         localStorage.setItem('auth-token', data.token)
         router.push('/dashboard')
       } else {
-        setError(data.error || 'An error occurred')
+        // Handle specific error cases
+        if (response.status === 500 && data.error.includes('Server configuration error')) {
+          setError('Server configuration issue. Please contact support if this persists.')
+        } else if (response.status === 409) {
+          setError('An account with this email already exists.')
+        } else if (response.status === 400) {
+          setError(data.error || 'Invalid input provided.')
+        } else {
+          setError(data.error || 'An unexpected error occurred.')
+        }
+        
+        // Show additional details in development
+        if (data.details && process.env.NODE_ENV === 'development') {
+          console.error('Server error details:', data.details)
+        }
       }
     } catch (error) {
       console.error('Auth error:', error)
@@ -72,6 +86,11 @@ export function AuthForm({ mode }: AuthFormProps) {
     // Clear validation errors when user starts typing
     if (validationErrors.length > 0) {
       setValidationErrors([])
+    }
+    
+    // Clear general errors when user starts typing
+    if (error) {
+      setError('')
     }
   }
 

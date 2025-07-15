@@ -32,20 +32,37 @@ export async function POST(request: NextRequest) {
 
     console.log('Input validation passed')
     
-    // Check environment variables
-    if (!process.env.COSMIC_BUCKET_SLUG || !process.env.COSMIC_READ_KEY || !process.env.COSMIC_WRITE_KEY) {
-      console.error('Missing Cosmic CMS environment variables')
-      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
+    // Check environment variables with detailed error logging
+    const missingEnvVars = []
+    if (!process.env.COSMIC_BUCKET_SLUG) missingEnvVars.push('COSMIC_BUCKET_SLUG')
+    if (!process.env.COSMIC_READ_KEY) missingEnvVars.push('COSMIC_READ_KEY')
+    if (!process.env.COSMIC_WRITE_KEY) missingEnvVars.push('COSMIC_WRITE_KEY')
+    if (!process.env.JWT_SECRET) missingEnvVars.push('JWT_SECRET')
+
+    if (missingEnvVars.length > 0) {
+      console.error('Missing environment variables:', missingEnvVars)
+      return NextResponse.json({ 
+        error: 'Server configuration error: Missing environment variables',
+        details: process.env.NODE_ENV === 'development' ? missingEnvVars : undefined
+      }, { status: 500 })
     }
 
-    if (!process.env.JWT_SECRET) {
-      console.error('Missing JWT_SECRET environment variable')
-      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
+    // Validate JWT_SECRET strength
+    if (process.env.JWT_SECRET!.length < 32) {
+      console.error('JWT_SECRET is too short')
+      return NextResponse.json({ error: 'Server configuration error: JWT secret too weak' }, { status: 500 })
     }
 
     // Check if user already exists
     console.log('Checking if user exists...')
-    const users = await getUsers()
+    let users: CosmicUser[] = []
+    try {
+      users = await getUsers()
+    } catch (error) {
+      console.error('Error fetching users:', error)
+      return NextResponse.json({ error: 'Database connection error' }, { status: 500 })
+    }
+
     const existingUser = users.find((u: CosmicUser) => u.metadata.email === email)
     
     if (existingUser) {
@@ -56,33 +73,49 @@ export async function POST(request: NextRequest) {
     console.log('User does not exist, proceeding with creation')
 
     // Hash password
-    const passwordHash = await bcrypt.hash(password, 12)
-    console.log('Password hashed successfully')
+    let passwordHash: string
+    try {
+      passwordHash = await bcrypt.hash(password, 12)
+      console.log('Password hashed successfully')
+    } catch (error) {
+      console.error('Password hashing error:', error)
+      return NextResponse.json({ error: 'Password processing error' }, { status: 500 })
+    }
 
     // Create user with correct subscription tier value
-    const user = await createUser({
-      title: `${firstName || ''} ${lastName || ''}`.trim() || email,
-      email,
-      passwordHash,
-      firstName,
-      lastName,
-      subscriptionTier: 'free' // Use the key, not the value
-    })
-
-    console.log('User created successfully:', user.id)
+    let user: CosmicUser
+    try {
+      user = await createUser({
+        title: `${firstName || ''} ${lastName || ''}`.trim() || email,
+        email,
+        passwordHash,
+        firstName,
+        lastName,
+        subscriptionTier: 'Free' // Use the display value from the dropdown
+      })
+      console.log('User created successfully:', user.id)
+    } catch (error) {
+      console.error('User creation error:', error)
+      return NextResponse.json({ error: 'Failed to create user account' }, { status: 500 })
+    }
 
     // Generate JWT token
-    const token = jwt.sign(
-      { 
-        userId: user.id, 
-        email: user.metadata.email,
-        subscriptionTier: user.metadata.subscription_tier.value
-      },
-      process.env.JWT_SECRET!,
-      { expiresIn: '7d' }
-    )
-
-    console.log('JWT token generated')
+    let token: string
+    try {
+      token = jwt.sign(
+        { 
+          userId: user.id, 
+          email: user.metadata.email,
+          subscriptionTier: user.metadata.subscription_tier?.value || 'Free'
+        },
+        process.env.JWT_SECRET!,
+        { expiresIn: '7d' }
+      )
+      console.log('JWT token generated')
+    } catch (error) {
+      console.error('JWT generation error:', error)
+      return NextResponse.json({ error: 'Authentication token generation failed' }, { status: 500 })
+    }
 
     // Create response without password
     const { password_hash, ...userWithoutPassword } = user.metadata
@@ -107,6 +140,9 @@ export async function POST(request: NextRequest) {
     return response
   } catch (error) {
     console.error('Registration error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    }, { status: 500 })
   }
 }

@@ -1,12 +1,30 @@
 import { createBucketClient } from '@cosmicjs/sdk'
 import { CosmicLink, CosmicUser, CosmicWeeklyDigest, CosmicAppSettings } from './types'
 
-// Initialize Cosmic client
-export const cosmic = createBucketClient({
-  bucketSlug: process.env.COSMIC_BUCKET_SLUG || '',
-  readKey: process.env.COSMIC_READ_KEY || '',
-  writeKey: process.env.COSMIC_WRITE_KEY || '',
-})
+// Validate environment variables on module load
+const validateEnvironment = () => {
+  const required = ['COSMIC_BUCKET_SLUG', 'COSMIC_READ_KEY', 'COSMIC_WRITE_KEY']
+  const missing = required.filter(key => !process.env[key])
+  
+  if (missing.length > 0) {
+    console.error('Missing required environment variables:', missing)
+    throw new Error(`Missing environment variables: ${missing.join(', ')}`)
+  }
+}
+
+// Initialize with validation
+let cosmic: any
+try {
+  validateEnvironment()
+  cosmic = createBucketClient({
+    bucketSlug: process.env.COSMIC_BUCKET_SLUG!,
+    readKey: process.env.COSMIC_READ_KEY!,
+    writeKey: process.env.COSMIC_WRITE_KEY!,
+  })
+} catch (error) {
+  console.error('Cosmic client initialization failed:', error)
+  throw error
+}
 
 // Export createBucketClient for use in other files
 export { createBucketClient }
@@ -205,10 +223,10 @@ export async function createUser(userData: {
         password_hash: userData.passwordHash,
         first_name: userData.firstName || '',
         last_name: userData.lastName || '',
-        subscription_tier: userData.subscriptionTier, // This will be the key ('free' or 'paid')
+        subscription_tier: userData.subscriptionTier, // Use the display value
         weekly_link_count: 0,
         email_verified: false,
-        account_created: new Date().toISOString().split('T')[0], // Format as YYYY-MM-DD
+        account_created: new Date().toISOString().split('T')[0],
         preferences: {
           email_notifications: true,
           digest_time: '09:00',
