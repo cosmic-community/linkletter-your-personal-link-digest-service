@@ -25,7 +25,7 @@ export function Navigation() {
     if (token) {
       try {
         const tokenParts = token.split('.')
-        if (tokenParts.length === 3) {
+        if (tokenParts.length === 3 && tokenParts[1]) {
           const payload = JSON.parse(atob(tokenParts[1]))
           // This is a simplified user object from token
           // In production, you'd want to fetch full user data

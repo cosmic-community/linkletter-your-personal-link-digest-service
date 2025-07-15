@@ -125,7 +125,7 @@ export function AdminDashboard({ analytics }: AdminDashboardProps) {
                             {user.metadata.first_name} {user.metadata.last_name}
                           </div>
                           <div className="text-sm text-gray-500">
-                            Joined {new Date(user.metadata.account_created || '').toLocaleDateString()}
+                            Joined {user.metadata.account_created ? new Date(user.metadata.account_created).toLocaleDateString() : 'Unknown'}
                           </div>
                         </div>
                       </div>
@@ -135,11 +135,11 @@ export function AdminDashboard({ analytics }: AdminDashboardProps) {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        user.metadata.subscription_tier.value === 'Paid' 
+                        user.metadata.subscription_tier?.value === 'Paid' 
                           ? 'bg-green-100 text-green-800' 
                           : 'bg-gray-100 text-gray-800'
                       }`}>
-                        {user.metadata.subscription_tier.value}
+                        {user.metadata.subscription_tier?.value || 'Free'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">

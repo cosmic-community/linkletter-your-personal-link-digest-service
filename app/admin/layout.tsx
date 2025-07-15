@@ -24,7 +24,7 @@ export default function AdminLayout({
 
         // Decode token to check if user is admin
         const tokenParts = token.split('.')
-        if (tokenParts.length !== 3) {
+        if (tokenParts.length !== 3 || !tokenParts[1]) {
           router.push('/login')
           return
         }

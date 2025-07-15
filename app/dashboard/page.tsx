@@ -22,7 +22,7 @@ export default function DashboardPage() {
 
     try {
       const tokenParts = token.split('.')
-      if (tokenParts.length !== 3) {
+      if (tokenParts.length !== 3 || !tokenParts[1]) {
         router.push('/login')
         return
       }
