@@ -13,14 +13,18 @@ export { createBucketClient }
 
 export async function getLinks(): Promise<CosmicLink[]> {
   try {
+    console.log('Fetching links from Cosmic CMS...')
     const response = await cosmic.objects
       .find({ type: 'links' })
       .props(['id', 'title', 'slug', 'metadata'])
       .depth(1)
     
+    console.log('Links fetched successfully:', response.objects.length)
     return response.objects as CosmicLink[]
   } catch (error) {
+    console.error('Error fetching links:', error)
     if (error && typeof error === 'object' && 'status' in error && error.status === 404) {
+      console.log('No links found, returning empty array')
       return []
     }
     throw error
@@ -29,14 +33,18 @@ export async function getLinks(): Promise<CosmicLink[]> {
 
 export async function getUsers(): Promise<CosmicUser[]> {
   try {
+    console.log('Fetching users from Cosmic CMS...')
     const response = await cosmic.objects
       .find({ type: 'users' })
       .props(['id', 'title', 'slug', 'metadata'])
       .depth(1)
     
+    console.log('Users fetched successfully:', response.objects.length)
     return response.objects as CosmicUser[]
   } catch (error) {
+    console.error('Error fetching users:', error)
     if (error && typeof error === 'object' && 'status' in error && error.status === 404) {
+      console.log('No users found, returning empty array')
       return []
     }
     throw error
@@ -45,14 +53,18 @@ export async function getUsers(): Promise<CosmicUser[]> {
 
 export async function getUserById(id: string): Promise<CosmicUser | null> {
   try {
+    console.log('Fetching user by ID:', id)
     const response = await cosmic.objects
       .findOne({ type: 'users', id })
       .props(['id', 'title', 'slug', 'metadata'])
       .depth(1)
     
+    console.log('User fetched successfully:', response.object.id)
     return response.object as CosmicUser
   } catch (error) {
+    console.error('Error fetching user by ID:', error)
     if (error && typeof error === 'object' && 'status' in error && error.status === 404) {
+      console.log('User not found')
       return null
     }
     throw error
@@ -61,8 +73,11 @@ export async function getUserById(id: string): Promise<CosmicUser | null> {
 
 export async function getUserByEmail(email: string): Promise<CosmicUser | null> {
   try {
+    console.log('Fetching user by email:', email)
     const users = await getUsers()
-    return users.find(user => user.metadata.email === email) || null
+    const user = users.find(user => user.metadata.email === email) || null
+    console.log('User by email result:', user ? 'found' : 'not found')
+    return user
   } catch (error) {
     console.error('Error fetching user by email:', error)
     return null
@@ -71,14 +86,18 @@ export async function getUserByEmail(email: string): Promise<CosmicUser | null> 
 
 export async function getWeeklyDigests(): Promise<CosmicWeeklyDigest[]> {
   try {
+    console.log('Fetching weekly digests from Cosmic CMS...')
     const response = await cosmic.objects
       .find({ type: 'weekly-digests' })
       .props(['id', 'title', 'slug', 'metadata'])
       .depth(1)
     
+    console.log('Weekly digests fetched successfully:', response.objects.length)
     return response.objects as CosmicWeeklyDigest[]
   } catch (error) {
+    console.error('Error fetching weekly digests:', error)
     if (error && typeof error === 'object' && 'status' in error && error.status === 404) {
+      console.log('No weekly digests found, returning empty array')
       return []
     }
     throw error
@@ -87,14 +106,18 @@ export async function getWeeklyDigests(): Promise<CosmicWeeklyDigest[]> {
 
 export async function getAppSettings(): Promise<CosmicAppSettings | null> {
   try {
+    console.log('Fetching app settings from Cosmic CMS...')
     const response = await cosmic.objects
       .findOne({ type: 'app-settings' })
       .props(['id', 'title', 'slug', 'metadata'])
       .depth(1)
     
+    console.log('App settings fetched successfully')
     return response.object as CosmicAppSettings
   } catch (error) {
+    console.error('Error fetching app settings:', error)
     if (error && typeof error === 'object' && 'status' in error && error.status === 404) {
+      console.log('App settings not found')
       return null
     }
     throw error
@@ -111,36 +134,57 @@ export async function createLink(linkData: {
   weekNumber: number
   year: number
 }): Promise<CosmicLink> {
-  const response = await cosmic.objects.insertOne({
-    title: linkData.title,
-    type: 'links',
-    metadata: {
-      url: linkData.url,
+  try {
+    console.log('Creating link in Cosmic CMS...')
+    const response = await cosmic.objects.insertOne({
       title: linkData.title,
-      notes: linkData.notes || '',
-      tags: linkData.tags || '',
-      user: linkData.userId,
-      date_saved: linkData.dateSaved,
-      week_number: linkData.weekNumber,
-      year: linkData.year,
-      archived: false,
-      click_count: 0,
-    },
-  })
-  
-  return response.object as CosmicLink
+      type: 'links',
+      metadata: {
+        url: linkData.url,
+        title: linkData.title,
+        notes: linkData.notes || '',
+        tags: linkData.tags || '',
+        user: linkData.userId,
+        date_saved: linkData.dateSaved,
+        week_number: linkData.weekNumber,
+        year: linkData.year,
+        archived: false,
+        click_count: 0,
+      },
+    })
+    
+    console.log('Link created successfully:', response.object.id)
+    return response.object as CosmicLink
+  } catch (error) {
+    console.error('Error creating link:', error)
+    throw error
+  }
 }
 
 export async function updateLink(linkId: string, linkData: Partial<CosmicLink>): Promise<CosmicLink> {
-  const response = await cosmic.objects.updateOne(linkId, {
-    metadata: linkData.metadata,
-  })
-  
-  return response.object as CosmicLink
+  try {
+    console.log('Updating link in Cosmic CMS:', linkId)
+    const response = await cosmic.objects.updateOne(linkId, {
+      metadata: linkData.metadata,
+    })
+    
+    console.log('Link updated successfully')
+    return response.object as CosmicLink
+  } catch (error) {
+    console.error('Error updating link:', error)
+    throw error
+  }
 }
 
 export async function deleteLink(linkId: string): Promise<void> {
-  await cosmic.objects.deleteOne(linkId)
+  try {
+    console.log('Deleting link from Cosmic CMS:', linkId)
+    await cosmic.objects.deleteOne(linkId)
+    console.log('Link deleted successfully')
+  } catch (error) {
+    console.error('Error deleting link:', error)
+    throw error
+  }
 }
 
 export async function createUser(userData: {
@@ -151,34 +195,48 @@ export async function createUser(userData: {
   lastName?: string
   subscriptionTier: string
 }): Promise<CosmicUser> {
-  const response = await cosmic.objects.insertOne({
-    title: userData.title,
-    type: 'users',
-    metadata: {
-      email: userData.email,
-      password_hash: userData.passwordHash,
-      first_name: userData.firstName || '',
-      last_name: userData.lastName || '',
-      subscription_tier: userData.subscriptionTier, // This will be the key ('free' or 'paid')
-      weekly_link_count: 0,
-      email_verified: false,
-      account_created: new Date().toISOString().split('T')[0], // Format as YYYY-MM-DD
-      preferences: {
-        email_notifications: true,
-        digest_time: '09:00',
-        timezone: 'America/New_York',
-        pocket_integration: false,
+  try {
+    console.log('Creating user in Cosmic CMS...')
+    const response = await cosmic.objects.insertOne({
+      title: userData.title,
+      type: 'users',
+      metadata: {
+        email: userData.email,
+        password_hash: userData.passwordHash,
+        first_name: userData.firstName || '',
+        last_name: userData.lastName || '',
+        subscription_tier: userData.subscriptionTier, // This will be the key ('free' or 'paid')
+        weekly_link_count: 0,
+        email_verified: false,
+        account_created: new Date().toISOString().split('T')[0], // Format as YYYY-MM-DD
+        preferences: {
+          email_notifications: true,
+          digest_time: '09:00',
+          timezone: 'America/New_York',
+          pocket_integration: false,
+        },
       },
-    },
-  })
-  
-  return response.object as CosmicUser
+    })
+    
+    console.log('User created successfully:', response.object.id)
+    return response.object as CosmicUser
+  } catch (error) {
+    console.error('Error creating user:', error)
+    throw error
+  }
 }
 
 export async function updateUser(userId: string, userData: Partial<CosmicUser>): Promise<CosmicUser> {
-  const response = await cosmic.objects.updateOne(userId, {
-    metadata: userData.metadata,
-  })
-  
-  return response.object as CosmicUser
+  try {
+    console.log('Updating user in Cosmic CMS:', userId)
+    const response = await cosmic.objects.updateOne(userId, {
+      metadata: userData.metadata,
+    })
+    
+    console.log('User updated successfully')
+    return response.object as CosmicUser
+  } catch (error) {
+    console.error('Error updating user:', error)
+    throw error
+  }
 }

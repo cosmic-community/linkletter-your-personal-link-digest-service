@@ -39,3 +39,35 @@ export function validatePassword(password: string): {
     errors
   }
 }
+
+export function validateRegistrationData(data: {
+  email: string
+  password: string
+  firstName?: string
+  lastName?: string
+}): {
+  isValid: boolean
+  errors: string[]
+} {
+  const errors: string[] = []
+  
+  if (!data.email) {
+    errors.push('Email is required')
+  } else if (!validateEmail(data.email)) {
+    errors.push('Invalid email format')
+  }
+  
+  if (!data.password) {
+    errors.push('Password is required')
+  } else {
+    const passwordValidation = validatePassword(data.password)
+    if (!passwordValidation.isValid) {
+      errors.push(...passwordValidation.errors)
+    }
+  }
+  
+  return {
+    isValid: errors.length === 0,
+    errors
+  }
+}

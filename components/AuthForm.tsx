@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { validateRegistrationData } from '@/lib/validations'
 
 interface AuthFormProps {
   mode: 'login' | 'register'
@@ -16,12 +17,24 @@ export function AuthForm({ mode }: AuthFormProps) {
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [validationErrors, setValidationErrors] = useState<string[]>([])
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError('')
+    setValidationErrors([])
+
+    // Client-side validation for registration
+    if (mode === 'register') {
+      const validation = validateRegistrationData(formData)
+      if (!validation.isValid) {
+        setValidationErrors(validation.errors)
+        setLoading(false)
+        return
+      }
+    }
 
     try {
       const endpoint = mode === 'login' ? '/api/auth/login' : '/api/auth/register'
@@ -36,6 +49,7 @@ export function AuthForm({ mode }: AuthFormProps) {
       const data = await response.json()
 
       if (response.ok) {
+        // Store token in localStorage for client-side access
         localStorage.setItem('auth-token', data.token)
         router.push('/dashboard')
       } else {
@@ -43,7 +57,7 @@ export function AuthForm({ mode }: AuthFormProps) {
       }
     } catch (error) {
       console.error('Auth error:', error)
-      setError('An error occurred. Please try again.')
+      setError('Network error. Please check your connection and try again.')
     } finally {
       setLoading(false)
     }
@@ -54,6 +68,11 @@ export function AuthForm({ mode }: AuthFormProps) {
       ...formData,
       [e.target.name]: e.target.value
     })
+    
+    // Clear validation errors when user starts typing
+    if (validationErrors.length > 0) {
+      setValidationErrors([])
+    }
   }
 
   return (
@@ -66,6 +85,16 @@ export function AuthForm({ mode }: AuthFormProps) {
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
             {error}
+          </div>
+        )}
+
+        {validationErrors.length > 0 && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            <ul className="list-disc pl-5">
+              {validationErrors.map((error, index) => (
+                <li key={index}>{error}</li>
+              ))}
+            </ul>
           </div>
         )}
 
@@ -83,6 +112,7 @@ export function AuthForm({ mode }: AuthFormProps) {
                   value={formData.firstName}
                   onChange={handleChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={loading}
                 />
               </div>
               
@@ -97,6 +127,7 @@ export function AuthForm({ mode }: AuthFormProps) {
                   value={formData.lastName}
                   onChange={handleChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -114,6 +145,7 @@ export function AuthForm({ mode }: AuthFormProps) {
               onChange={handleChange}
               required
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={loading}
             />
           </div>
           
@@ -129,13 +161,19 @@ export function AuthForm({ mode }: AuthFormProps) {
               onChange={handleChange}
               required
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={loading}
             />
+            {mode === 'register' && (
+              <p className="text-xs text-gray-500 mt-1">
+                Password must be at least 8 characters with uppercase, lowercase, and number
+              </p>
+            )}
           </div>
           
           <button
             type="submit"
             disabled={loading}
-            className="w-full btn btn-primary disabled:opacity-50"
+            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? 'Processing...' : (mode === 'login' ? 'Login' : 'Create Account')}
           </button>

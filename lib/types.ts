@@ -101,3 +101,13 @@ export interface CosmicAppSettings {
     }
   }
 }
+
+export interface AuthResponse {
+  user: CosmicUser
+  token: string
+}
+
+export interface ApiError {
+  error: string
+  details?: string
+}
