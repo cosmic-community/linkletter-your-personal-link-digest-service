@@ -151,25 +151,25 @@ export async function fetchMetadata(url: string): Promise<MetadataFetchResult> {
     
     // Extract title
     const titleMatch = html.match(/<title[^>]*>([^<]*)<\/title>/i)
-    const title = titleMatch ? titleMatch[1].trim() : url
+    const title = titleMatch?.[1]?.trim() || url
 
     // Extract description
     const descriptionMatch = html.match(/<meta[^>]*name="description"[^>]*content="([^"]*)"[^>]*>/i) ||
                             html.match(/<meta[^>]*property="og:description"[^>]*content="([^"]*)"[^>]*>/i)
-    const description = descriptionMatch ? descriptionMatch[1].trim() : ''
+    const description = descriptionMatch?.[1]?.trim() || ''
 
     // Extract image
     const imageMatch = html.match(/<meta[^>]*property="og:image"[^>]*content="([^"]*)"[^>]*>/i)
-    const image = imageMatch ? imageMatch[1].trim() : undefined
+    const image = imageMatch?.[1]?.trim() || undefined
 
     // Extract site name
     const siteNameMatch = html.match(/<meta[^>]*property="og:site_name"[^>]*content="([^"]*)"[^>]*>/i)
-    const siteName = siteNameMatch ? siteNameMatch[1].trim() : undefined
+    const siteName = siteNameMatch?.[1]?.trim() || undefined
 
     // Extract favicon
     const faviconMatch = html.match(/<link[^>]*rel="icon"[^>]*href="([^"]*)"[^>]*>/i) ||
                         html.match(/<link[^>]*rel="shortcut icon"[^>]*href="([^"]*)"[^>]*>/i)
-    const favicon = faviconMatch ? faviconMatch[1].trim() : undefined
+    const favicon = faviconMatch?.[1]?.trim() || undefined
 
     return {
       title,

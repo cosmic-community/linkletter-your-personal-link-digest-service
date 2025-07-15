@@ -268,7 +268,7 @@ export default function Dashboard() {
               selectedIds={selectedLinks}
               onDelete={handleDeleteLink}
               onEdit={handleUpdateLink}
-              pagination={pagination}
+              pagination={pagination || undefined}
               onPageChange={handlePageChange}
             />
 
