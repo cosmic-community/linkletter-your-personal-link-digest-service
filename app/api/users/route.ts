@@ -15,7 +15,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { email, password, firstName, lastName, subscriptionTier = 'Free' } = body
+    const { email, password, firstName, lastName, subscriptionTier = 'free' } = body
     
     if (!email || !password) {
       return NextResponse.json({ error: 'Email and password are required' }, { status: 400 })
@@ -28,8 +28,8 @@ export async function POST(request: NextRequest) {
       title: `${firstName || ''} ${lastName || ''}`.trim() || email,
       email,
       passwordHash,
-      firstName,
-      lastName,
+      firstName: firstName || '',
+      lastName: lastName || '',
       subscriptionTier,
     })
     

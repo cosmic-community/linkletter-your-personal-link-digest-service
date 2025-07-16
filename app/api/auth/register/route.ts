@@ -82,16 +82,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Password processing error' }, { status: 500 })
     }
 
-    // Create user with correct subscription tier value
+    // Create user with correct subscription tier format
     let user: CosmicUser
     try {
       user = await createUser({
         title: `${firstName || ''} ${lastName || ''}`.trim() || email,
         email,
         passwordHash,
-        firstName,
-        lastName,
-        subscriptionTier: 'Free' // Use the display value from the dropdown
+        firstName: firstName || '',
+        lastName: lastName || '',
+        subscriptionTier: 'free' // Use the key value from the dropdown options
       })
       console.log('User created successfully:', user.id)
     } catch (error) {

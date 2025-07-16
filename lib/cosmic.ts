@@ -210,8 +210,8 @@ export async function createUser(userData: {
   title: string
   email: string
   passwordHash: string
-  firstName?: string
-  lastName?: string
+  firstName: string
+  lastName: string
   subscriptionTier: string
 }): Promise<CosmicUser> {
   try {
@@ -222,9 +222,9 @@ export async function createUser(userData: {
       metadata: {
         email: userData.email,
         password_hash: userData.passwordHash,
-        first_name: userData.firstName || '',
-        last_name: userData.lastName || '',
-        subscription_tier: userData.subscriptionTier, // Use the display value
+        first_name: userData.firstName,
+        last_name: userData.lastName,
+        subscription_tier: userData.subscriptionTier, // Use the key value (free/paid)
         weekly_link_count: 0,
         email_verified: false,
         account_created: new Date().toISOString().split('T')[0],
