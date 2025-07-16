@@ -114,7 +114,7 @@ export default function SettingsPage() {
               <button
                 onClick={handleSave}
                 disabled={loading}
-                className="w-full btn btn-primary disabled:opacity-50"
+                className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
               >
                 {loading ? 'Saving...' : 'Save Settings'}
               </button>

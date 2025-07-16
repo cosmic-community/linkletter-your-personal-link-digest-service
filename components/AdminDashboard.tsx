@@ -74,11 +74,11 @@ export function AdminDashboard({ analytics }: AdminDashboardProps) {
           <button
             onClick={sendDigests}
             disabled={sendingDigests}
-            className="btn btn-primary disabled:opacity-50"
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
           >
             {sendingDigests ? 'Sending...' : 'Send Weekly Digests'}
           </button>
-          <button className="btn btn-secondary">
+          <button className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700">
             Export User Data
           </button>
         </div>
